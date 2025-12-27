@@ -1,112 +1,196 @@
+<!-- const SUPABASE_URL = 'https://qgaqstwjlpbwpukyevrr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nkKSIHSsryRfufcD1ZYOdw_CD3C8g-M'; -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多人健身同步版</title>
-    <!-- 引入 Supabase SDK -->
+    <title>训记·极简版</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --primary: #28a745;
+            --bg: #f4f7f6;
+        }
+
         body {
-            font-family: -apple-system, sans-serif;
-            background: #f0f2f5;
+            font-family: -apple-system, system-ui;
+            background: var(--bg);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
 
         .container {
-            max-width: 500px;
+            max-width: 600px;
             margin: auto;
             background: white;
             padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
+        /* 日历样式 */
+        .calendar-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+            margin-top: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1/1;
+            background: #ebedf0;
+            border-radius: 2px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+
+        .cal-day.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .cal-day.today {
+            border: 1px solid #333;
+        }
+
+        /* 用户选择 */
         .user-selector {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 8px;
+            margin-bottom: 15px;
         }
 
         .user-btn {
             flex: 1;
-            padding: 10px;
+            padding: 8px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            background: #eee;
             cursor: pointer;
-            background: #ddd;
         }
 
         .user-btn.active {
-            background: #007bff;
+            background: #333;
             color: white;
-            font-weight: bold;
         }
 
+        /* 输入区 */
         .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
             margin-bottom: 20px;
         }
 
-        input,
-        select {
+        select,
+        input {
+            width: 100%;
             padding: 12px;
+            margin: 5px 0;
             border: 1px solid #ddd;
             border-radius: 8px;
+            box-sizing: border-box;
             font-size: 16px;
         }
 
-        button#add-btn {
-            padding: 12px;
-            background: #28a745;
+        .last-hint {
+            font-size: 12px;
+            color: #efb306;
+            margin-bottom: 10px;
+            min-height: 15px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        button#save-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
-            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
         }
 
         .record-card {
-            background: #fff;
-            border: 1px solid #eee;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            position: relative;
+            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-between;
         }
 
         .user-tag {
-            font-size: 12px;
+            font-size: 10px;
+            background: #333;
+            color: white;
             padding: 2px 6px;
             border-radius: 4px;
+            margin-right: 5px;
+        }
+
+        /* 今日训练卡片样式 */
+        .today-section {
+            margin-bottom: 20px;
+        }
+
+        .today-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .today-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .today-card {
+            background: linear-gradient(135deg, var(--primary), #20c997);
             color: white;
-            margin-bottom: 5px;
-            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
         }
 
-        .tag-user1 {
-            background: #007bff;
+        .today-card .exercise-name {
+            font-weight: bold;
+            margin-bottom: 4px;
         }
 
-        .tag-user2 {
-            background: #6f42c1;
+        .today-card .exercise-detail {
+            font-size: 11px;
+            opacity: 0.9;
         }
 
-        .delete-btn {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            color: #dc3545;
-            border: none;
-            background: none;
-            cursor: pointer;
+        .today-empty {
+            color: #999;
+            font-size: 13px;
+            padding: 15px;
+            text-align: center;
+            background: #f5f5f5;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -114,126 +198,214 @@
 <body>
 
     <div class="container">
-        <h2>🤝 伙伴健身记录</h2>
-
-        <!-- 用户切换 -->
         <div class="user-selector">
-            <button class="user-btn active" onclick="switchUser('小明', this)">小明</button>
-            <button class="user-btn" onclick="switchUser('伙伴A', this)">伙伴A</button>
+            <button class="user-btn active" onclick="setUser('小明', this)">小明</button>
+            <button class="user-btn" onclick="setUser('伙伴A', this)">伙伴A</button>
         </div>
+
+        <!-- 瓷砖日历 -->
+        <div class="calendar-title" id="month-label">训练热力图</div>
+        <div class="calendar-grid" id="calendar"></div>
 
         <div class="input-group">
-            <input type="text" id="exercise" placeholder="动作名称 (如: 卧推)">
-            <div style="display: flex; gap: 5px;">
-                <input type="number" id="weight" placeholder="重量 kg" style="flex: 1;">
-                <input type="number" id="reps" placeholder="次数" style="flex: 1;">
-                <input type="number" id="sets" placeholder="组数" style="flex: 1;">
+            <select id="exercise-select" onchange="onExerciseChange()">
+                <option value="">-- 选择动作 --</option>
+                <optgroup label="胸部">
+                    <option value="杠铃卧推">杠铃卧推</option>
+                    <option value="上斜卧推">上斜卧推</option>
+                    <option value="哑铃飞鸟">哑铃飞鸟</option>
+                </optgroup>
+                <optgroup label="背部">
+                    <option value="引体向上">引体向上</option>
+                    <option value="高位下拉">高位下拉</option>
+                    <option value="划船">划船</option>
+                </optgroup>
+                <optgroup label="腿部">
+                    <option value="深蹲">深蹲</option>
+                    <option value="硬拉">硬拉</option>
+                </optgroup>
+                <option value="custom">➕ 手动输入新动作</option>
+            </select>
+            <input type="text" id="custom-exercise" placeholder="请输入动作名称" style="display:none;">
+
+            <div class="last-hint" id="last-performance">选择动作后查看上次表现</div>
+
+            <div class="row">
+                <input type="number" id="weight" placeholder="KG">
+                <input type="number" id="reps" placeholder="次数">
+                <input type="number" id="sets" placeholder="组数">
             </div>
-            <button id="add-btn" onclick="addRecord()">保存到云端</button>
+            <button id="save-btn" onclick="addRecord()">完成这一项</button>
         </div>
 
-        <div id="history">加载中...</div>
+        <!-- 今日已完成训练 -->
+        <div class="today-section">
+            <div class="today-title">🏋️ 今日已完成</div>
+            <div class="today-cards" id="today-cards"></div>
+        </div>
+
+        <div id="history-list"></div>
     </div>
 
     <script>
-        // --- 配置信息 (请替换这里) ---
         const SUPABASE_URL = 'https://qgaqstwjlpbwpukyevrr.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_nkKSIHSsryRfufcD1ZYOdw_CD3C8g-M';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = '小明';
+        let allRecords = [];
 
-        function switchUser(name, el) {
-            currentUser = name;
-            document.querySelectorAll('.user-btn').forEach(btn => btn.classList.remove('active'));
-            el.classList.add('active');
+        // 获取今天的日期字符串
+        function getTodayStr() {
+            return new Date().toLocaleDateString();
         }
 
-        // 添加记录到 Supabase
+        async function setUser(name, btn) {
+            currentUser = name;
+            document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            onExerciseChange();
+            renderTodayCards(); // 切换用户时刷新今日卡片
+        }
+
+        // 动作切换逻辑
+        async function onExerciseChange() {
+            const select = document.getElementById('exercise-select');
+            const customInput = document.getElementById('custom-exercise');
+            const hint = document.getElementById('last-performance');
+
+            let exerciseName = select.value;
+            if (exerciseName === 'custom') {
+                customInput.style.display = 'block';
+                hint.innerText = "";
+                return;
+            } else {
+                customInput.style.display = 'none';
+            }
+
+            if (!exerciseName) return;
+
+            // 核心功能：查询该用户该动作的上次记录
+            const { data } = await supabaseClient
+                .from('fitness_records')
+                .select('*')
+                .eq('user_name', currentUser)
+                .eq('exercise_name', exerciseName)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (data && data.length > 0) {
+                const last = data[0];
+                hint.innerText = `上次 (${last.date}): ${last.weight}kg x ${last.reps}下 x ${last.sets}组`;
+            } else {
+                hint.innerText = "这是你第一次记录该动作";
+            }
+        }
+
         async function addRecord() {
-            const name = document.getElementById('exercise').value;
+            let name = document.getElementById('exercise-select').value;
+            if (name === 'custom') name = document.getElementById('custom-exercise').value;
             const weight = document.getElementById('weight').value;
             const reps = document.getElementById('reps').value;
             const sets = document.getElementById('sets').value;
-            const date = new Date().toLocaleDateString();
 
-            if (!name || !reps) return alert("请填写完整！");
+            if (!name || !reps) return alert("请填写完整");
 
-            const { data, error } = await supabase
-                .from('fitness_records')
-                .insert([{
-                    user_name: currentUser,
-                    exercise_name: name,
-                    weight: parseFloat(weight),
-                    reps: parseInt(reps),
-                    sets: parseInt(sets),
-                    date: date
-                }]);
+            await supabaseClient.from('fitness_records').insert([{
+                user_name: currentUser,
+                exercise_name: name,
+                weight: parseFloat(weight),
+                reps: parseInt(reps),
+                sets: parseInt(sets),
+                date: new Date().toLocaleDateString()
+            }]);
 
-            if (error) alert("保存失败: " + error.message);
-            else {
-                document.getElementById('exercise').value = '';
-                fetchRecords(); // 刷新列表
-            }
+            // 清空输入框
+            document.getElementById('weight').value = '';
+            document.getElementById('reps').value = '';
+            document.getElementById('sets').value = '';
+            document.getElementById('exercise-select').value = '';
+            document.getElementById('custom-exercise').style.display = 'none';
+            document.getElementById('last-performance').innerText = '选择动作后查看上次表现';
+
+            fetchData();
         }
 
-        // 从 Supabase 获取数据
-        async function fetchRecords() {
-                const historyDiv = document.getElementById('history');
+        async function fetchData() {
+            const { data } = await supabaseClient.from('fitness_records').select('*').order('created_at', { ascending: false });
+            allRecords = data || [];
+            renderTodayCards();
+            renderHistory();
+            renderCalendar();
+        }
 
-                try {
-                    const { data, error } = await supabase
-                        .from('fitness_records')
-                        .select('*')
-                        .order('created_at', { ascending: false });
+        // 渲染今日训练卡片
+        function renderTodayCards() {
+            const container = document.getElementById('today-cards');
+            const todayStr = getTodayStr();
+            
+            // 筛选当前用户今天的记录
+            const todayRecords = allRecords.filter(r => 
+                r.user_name === currentUser && r.date === todayStr
+            );
 
-                    if (error) {
-                        historyDiv.innerHTML = `<p style="color:red">加载失败: ${error.message}</p>`;
-                        return;
-                    }
-
-                    if (data.length === 0) {
-                        historyDiv.innerHTML = '<p>暂无数据，快去训练吧！</p>';
-                        return;
-                    }
-
-                    render(data);
-                } catch (err) {
-                    historyDiv.innerHTML = `<p style="color:red">网络连接异常</p>`;
-                }
+            if (todayRecords.length === 0) {
+                container.innerHTML = '<div class="today-empty">今天还没有训练记录，开始第一个动作吧！</div>';
+                return;
             }
 
-        function render(records) {
-            const historyDiv = document.getElementById('history');
-            historyDiv.innerHTML = '';
-
-            records.forEach(record => {
-                const userClass = record.user_name === '小明' ? 'tag-user1' : 'tag-user2';
-                const item = document.createElement('div');
-                item.className = 'record-card';
-                item.innerHTML = `
-                <span class="user-tag ${userClass}">${record.user_name}</span>
-                <button class="delete-btn" onclick="deleteRecord('${record.id}')">删除</button>
-                <div>
-                    <strong>${record.exercise_name}</strong><br>
-                    <small>${record.date}</small> — ${record.weight}kg × ${record.reps}下 × ${record.sets}组
+            container.innerHTML = todayRecords.map(r => `
+                <div class="today-card">
+                    <div class="exercise-name">${r.exercise_name}</div>
+                    <div class="exercise-detail">${r.weight}kg × ${r.reps}次 × ${r.sets}组</div>
                 </div>
-            `;
-                historyDiv.appendChild(item);
-            });
+            `).join('');
         }
 
-        async function deleteRecord(id) {
-            if (!confirm("确定删除吗？")) return;
-            await supabase.from('fitness_records').delete().eq('id', id);
-            fetchRecords();
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = allRecords.slice(0, 10).map(r => `
+            <div class="record-card">
+                <div>
+                    <span class="user-tag">${r.user_name}</span>
+                    <strong>${r.exercise_name}</strong><br>
+                    <small style="color:#999">${r.date}</small>
+                </div>
+                <div style="text-align:right">
+                    ${r.weight}kg · ${r.reps}次 · ${r.sets}组
+                </div>
+            </div>
+        `).join('');
         }
 
-        // 每30秒自动刷新一次数据，实现准实时同步
-        setInterval(fetchRecords, 30000);
-        fetchRecords();
+        function renderCalendar() {
+            const grid = document.getElementById('calendar');
+            grid.innerHTML = '';
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+
+            document.getElementById('month-label').innerText = `${year}年${month + 1}月 训练热力图`;
+
+            // 获取本月天数
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // 获取有记录的日期集合
+            const activeDates = new Set(allRecords.map(r => r.date));
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = new Date(year, month, i).toLocaleDateString();
+                const dayEl = document.createElement('div');
+                dayEl.className = 'cal-day';
+                if (activeDates.has(dateStr)) dayEl.classList.add('active');
+                if (i === now.getDate()) dayEl.classList.add('today');
+                dayEl.innerText = i;
+                grid.appendChild(dayEl);
+            }
+        }
+
+        fetchData();
     </script>
-
 </body>
 
 </html>
