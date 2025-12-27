@@ -179,18 +179,29 @@
 
         // 从 Supabase 获取数据
         async function fetchRecords() {
-            const { data, error } = await supabase
-                .from('fitness_records')
-                .select('*')
-                .order('created_at', { ascending: false });
+                const historyDiv = document.getElementById('history');
 
-            if (error) {
-                console.error(error);
-                return;
+                try {
+                    const { data, error } = await supabase
+                        .from('fitness_records')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        historyDiv.innerHTML = `<p style="color:red">加载失败: ${error.message}</p>`;
+                        return;
+                    }
+
+                    if (data.length === 0) {
+                        historyDiv.innerHTML = '<p>暂无数据，快去训练吧！</p>';
+                        return;
+                    }
+
+                    render(data);
+                } catch (err) {
+                    historyDiv.innerHTML = `<p style="color:red">网络连接异常</p>`;
+                }
             }
-
-            render(data);
-        }
 
         function render(records) {
             const historyDiv = document.getElementById('history');
