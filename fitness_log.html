@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多人健身同步版</title>
+    <!-- 引入 Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+
+        .user-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #ddd;
+        }
+
+        .user-btn.active {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button#add-btn {
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .record-card {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .user-tag {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .tag-user1 {
+            background: #007bff;
+        }
+
+        .tag-user2 {
+            background: #6f42c1;
+        }
+
+        .delete-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            color: #dc3545;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>🤝 伙伴健身记录</h2>
+
+        <!-- 用户切换 -->
+        <div class="user-selector">
+            <button class="user-btn active" onclick="switchUser('小明', this)">小明</button>
+            <button class="user-btn" onclick="switchUser('伙伴A', this)">伙伴A</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="exercise" placeholder="动作名称 (如: 卧推)">
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="weight" placeholder="重量 kg" style="flex: 1;">
+                <input type="number" id="reps" placeholder="次数" style="flex: 1;">
+                <input type="number" id="sets" placeholder="组数" style="flex: 1;">
+            </div>
+            <button id="add-btn" onclick="addRecord()">保存到云端</button>
+        </div>
+
+        <div id="history">加载中...</div>
+    </div>
+
+    <script>
+        // --- 配置信息 (请替换这里) ---
+        const SUPABASE_URL = 'https://qgaqstwjlpbwpukyevrr.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_nkKSIHSsryRfufcD1ZYOdw_CD3C8g-M';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = '小明';
+
+        function switchUser(name, el) {
+            currentUser = name;
+            document.querySelectorAll('.user-btn').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // 添加记录到 Supabase
+        async function addRecord() {
+            const name = document.getElementById('exercise').value;
+            const weight = document.getElementById('weight').value;
+            const reps = document.getElementById('reps').value;
+            const sets = document.getElementById('sets').value;
+            const date = new Date().toLocaleDateString();
+
+            if (!name || !reps) return alert("请填写完整！");
+
+            const { data, error } = await supabase
+                .from('fitness_records')
+                .insert([{
+                    user_name: currentUser,
+                    exercise_name: name,
+                    weight: parseFloat(weight),
+                    reps: parseInt(reps),
+                    sets: parseInt(sets),
+                    date: date
+                }]);
+
+            if (error) alert("保存失败: " + error.message);
+            else {
+                document.getElementById('exercise').value = '';
+                fetchRecords(); // 刷新列表
+            }
+        }
+
+        // 从 Supabase 获取数据
+        async function fetchRecords() {
+            const { data, error } = await supabase
+                .from('fitness_records')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            render(data);
+        }
+
+        function render(records) {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = '';
+
+            records.forEach(record => {
+                const userClass = record.user_name === '小明' ? 'tag-user1' : 'tag-user2';
+                const item = document.createElement('div');
+                item.className = 'record-card';
+                item.innerHTML = `
+                <span class="user-tag ${userClass}">${record.user_name}</span>
+                <button class="delete-btn" onclick="deleteRecord('${record.id}')">删除</button>
+                <div>
+                    <strong>${record.exercise_name}</strong><br>
+                    <small>${record.date}</small> — ${record.weight}kg × ${record.reps}下 × ${record.sets}组
+                </div>
+            `;
+                historyDiv.appendChild(item);
+            });
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm("确定删除吗？")) return;
+            await supabase.from('fitness_records').delete().eq('id', id);
+            fetchRecords();
+        }
+
+        // 每30秒自动刷新一次数据，实现准实时同步
+        setInterval(fetchRecords, 30000);
+        fetchRecords();
+    </script>
+
+</body>
+
+</html>
